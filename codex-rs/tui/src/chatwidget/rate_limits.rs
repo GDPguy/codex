@@ -224,7 +224,18 @@ impl ChatWidget {
         Some(std::time::Duration::from_secs(seconds))
     }
 
+    /// Native ChatGPT quota recovery must not block requests to external providers.
+    pub(super) fn uses_native_chatgpt_codex_backend(&self) -> bool {
+        self.config
+            .model_providers
+            .get(&self.config.model_provider_id)
+            .is_some_and(|provider| provider.uses_native_chatgpt_codex_backend())
+    }
+
     pub(crate) fn hold_rate_limit_recovery(&mut self) -> bool {
+        if !self.uses_native_chatgpt_codex_backend() {
+            return false;
+        }
         std::mem::replace(&mut self.input_queue.rate_limit_recovery_pending, true)
     }
 
