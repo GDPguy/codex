@@ -290,7 +290,9 @@ pub(crate) async fn run_turn(
             .await;
         // Publish the failure only after prompt hooks finish, so clients cannot react to
         // an error by steering follow-up input into a turn still preserving its prompt.
-        let message_prefix = match turn_context.provider.capabilities().remote_compaction {
+        let message_prefix = match turn_context.remote_compaction_support_for_model(
+            &turn_context.capture_current_model_info().slug,
+        ) {
             RemoteCompactionSupport::V2 => Some("Error running remote compact task".to_string()),
             RemoteCompactionSupport::Unsupported => None,
         };
@@ -1785,7 +1787,9 @@ async fn run_auto_compact(
         return Ok(true);
     }
 
-    match turn_context.provider.capabilities().remote_compaction {
+    match turn_context.remote_compaction_support_for_model(
+        &replacement_step_context.settings.model_info.slug,
+    ) {
         RemoteCompactionSupport::V2 => {
             let has_candidate = candidate.is_some();
             if !has_candidate {
