@@ -710,6 +710,17 @@ other non-default provider fields are not supported"
         self.name == OPENAI_PROVIDER_NAME
     }
 
+    /// Whether this provider uses the native ChatGPT Codex backend and its account quota.
+    ///
+    /// Redirecting the OpenAI provider to a local or third-party Responses endpoint
+    /// must not make that endpoint inherit ChatGPT's quota recovery and compaction.
+    pub fn uses_native_chatgpt_codex_backend(&self) -> bool {
+        self.is_openai()
+            && self.base_url.as_deref().is_none_or(|base_url| {
+                base_url.trim_end_matches('/') == "https://chatgpt.com/backend-api/codex"
+            })
+    }
+
     pub fn supports_codex_backend_routes(&self) -> bool {
         self.is_openai()
             && self.base_url.as_deref().is_none_or(|base_url| {
