@@ -46,7 +46,9 @@ pub(super) fn enabled(turn_context: &TurnContext) -> bool {
             && turn_context.session_source.is_non_root_agent())
         && !features.enabled(Feature::TokenBudget)
         && matches!(
-            turn_context.provider.capabilities().remote_compaction,
+            turn_context.remote_compaction_support_for_model(
+                &turn_context.capture_current_model_info().slug
+            ),
             RemoteCompactionSupport::V2
         )
 }
