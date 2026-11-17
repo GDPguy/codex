@@ -1,0 +1,64 @@
+name: Build Codex with WebGPT quota fix
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/webgpt-external-provider-quota
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    name: Linux x86_64 release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_RELEASE_DEBUG: "0"
+      CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+    defaults:
+      run:
+        working-directory: codex-rs
+        shell: bash
+
+    steps:
+      - name: Check out fork
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain (on runner, not your PC)
+        uses: dtolnay/rust-toolchain@d124f86f28ff42855784ff3319f48ac182c248f8 # 1.99.1
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev clang libclang-dev protobuf-compiler libsqlite3-dev
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Check CLI and its dependencies
+        run: cargo check --locked -p codex-cli
+
+      - name: Build Linux CLI
+        run: cargo build --locked --release -p codex-cli --bin codex
+
+      - name: Prepare binary and checksum
+        run: |
+          mkdir -p ../release-webgpt
+          cp target/release/codex ../release-webgpt/codex
+          chmod +x ../release-webgpt/codex
+          (cd ../release-webgpt && sha256sum codex > SHA256SUMS)
+          ../release-webgpt/codex --version
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-linux-x86_64-webgpt-fix
+          path: release-webgpt/
+          if-no-files-found: error
+          retention-days: 14
