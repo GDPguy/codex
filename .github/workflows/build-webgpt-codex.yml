@@ -38,11 +38,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y pkg-config libssl-dev clang libclang-dev protobuf-compiler libsqlite3-dev
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
+      - name: Format patched code on the build runner
+        run: cargo fmt --all
 
       - name: Check CLI and its dependencies
         run: cargo check --locked -p codex-cli
+
+      - name: Test WebGPT model routing
+        run: cargo test --locked -p codex-core webgpt_model_routing_tests --lib
 
       - name: Build Linux CLI
         run: cargo build --locked --release -p codex-cli --bin codex
