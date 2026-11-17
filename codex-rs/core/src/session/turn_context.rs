@@ -599,6 +599,24 @@ impl TurnContext {
         }
     }
 
+fn is_webgpt_routed_model(model: &str) -> bool {
+    model.starts_with("chatgpt-web/")
+}
+
+#[cfg(test)]
+mod webgpt_model_routing_tests {
+    use super::is_webgpt_routed_model;
+
+    #[test]
+    fn only_webgpt_models_use_the_external_compaction_route() {
+        assert!(is_webgpt_routed_model("chatgpt-web/gpt-6-sol"));
+        assert!(is_webgpt_routed_model("chatgpt-web/gpt-5.6-sol"));
+        assert!(!is_webgpt_routed_model("gpt-6.1-sol"));
+        assert!(!is_webgpt_routed_model("chatgpt-web"));
+        assert!(!is_webgpt_routed_model("other/gpt-6-sol"));
+    }
+}
+
     /// Routed ChatGPT Web models must compact via the selected model rather
     /// than the native Codex backend. Native models keep remote compaction,
     /// even while a WebGPT installation proxies both through localhost.
@@ -606,7 +624,7 @@ impl TurnContext {
         &self,
         model: &str,
     ) -> RemoteCompactionSupport {
-        if model.starts_with("chatgpt-web/") {
+        if is_webgpt_routed_model(model) {
             RemoteCompactionSupport::Unsupported
         } else {
             self.provider.capabilities().remote_compaction
