@@ -331,6 +331,13 @@ impl ChatWidget {
         }
         self.refresh_effective_service_tier();
         self.refresh_model_dependent_surfaces();
+        // A native quota recovery may still be in flight when the user switches
+        // to a WebGPT model. Release that hold immediately for the external route.
+        if !self.uses_native_chatgpt_codex_backend()
+            && std::mem::take(&mut self.input_queue.rate_limit_recovery_pending)
+        {
+            self.maybe_send_next_queued_input();
+        }
     }
 
     pub(super) fn queue_unavailable_daybreak_disable(&self, model: &str) {
