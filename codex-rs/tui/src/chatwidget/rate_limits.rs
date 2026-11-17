@@ -224,12 +224,11 @@ impl ChatWidget {
         Some(std::time::Duration::from_secs(seconds))
     }
 
-    /// Native ChatGPT quota recovery must not block requests to external providers.
+    /// The WebGPT bridge routes native Codex and web models through the same
+    /// OpenAI provider. Quota recovery applies only to native model selections.
     pub(super) fn uses_native_chatgpt_codex_backend(&self) -> bool {
-        self.config
-            .model_providers
-            .get(&self.config.model_provider_id)
-            .is_some_and(|provider| provider.uses_native_chatgpt_codex_backend())
+        self.config.model_provider_id == "openai"
+            && !self.current_model().starts_with("chatgpt-web/")
     }
 
     pub(crate) fn hold_rate_limit_recovery(&mut self) -> bool {
