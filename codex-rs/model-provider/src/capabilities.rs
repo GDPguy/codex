@@ -33,7 +33,7 @@ impl Default for ProviderCapabilities {
 impl ProviderCapabilities {
     pub(crate) fn from_config(info: &ModelProviderInfo) -> Self {
         let defaults = Self {
-            remote_compaction: if info.is_openai()
+            remote_compaction: if info.uses_native_chatgpt_codex_backend()
                 || is_azure_responses_provider(&info.name, info.base_url.as_deref())
             {
                 RemoteCompactionSupport::V2
