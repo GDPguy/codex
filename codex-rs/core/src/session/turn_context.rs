@@ -23,6 +23,7 @@ use codex_extension_api::SelectedPluginSnapshot;
 use codex_file_system::EnvironmentAccess;
 use codex_file_system::FileSystemEnvironmentAccessor;
 use codex_file_system::FileSystemSandboxContext;
+use codex_model_provider::RemoteCompactionSupport;
 use codex_model_provider::SharedModelProvider;
 use codex_protocol::SessionId;
 use codex_protocol::ThreadId;
@@ -595,6 +596,20 @@ impl TurnContext {
             parent_turn_id: self.turn_metadata_state.parent_turn_id(),
             initiating_agent_path: self.turn_metadata_state.initiating_agent_path().cloned(),
             root_turn_id: self.turn_metadata_state.root_turn_id(),
+        }
+    }
+
+    /// Routed ChatGPT Web models must compact via the selected model rather
+    /// than the native Codex backend. Native models keep remote compaction,
+    /// even while a WebGPT installation proxies both through localhost.
+    pub(crate) fn remote_compaction_support_for_model(
+        &self,
+        model: &str,
+    ) -> RemoteCompactionSupport {
+        if model.starts_with("chatgpt-web/") {
+            RemoteCompactionSupport::Unsupported
+        } else {
+            self.provider.capabilities().remote_compaction
         }
     }
 
